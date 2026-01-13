@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>X O – Elimination Arena</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Montserrat',sans-serif;
+}
+
+body{
+    height:100vh;
+    background:
+      radial-gradient(circle at top, #1b1b1b 0%, #000 60%);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    color:#fff;
+}
+
+.container{
+    width:100%;
+    max-width:420px;
+    text-align:center;
+}
+
+.logo{
+    font-size:64px;
+    font-weight:800;
+    letter-spacing:12px;
+    margin-bottom:10px;
+}
+
+.logo .x{
+    color:#ff2b2b;
+    text-shadow:0 0 20px rgba(255,43,43,0.8);
+}
+
+.logo .o{
+    color:#1aff6a;
+    text-shadow:0 0 20px rgba(26,255,106,0.8);
+}
+
+.subtitle{
+    font-size:12px;
+    letter-spacing:4px;
+    opacity:0.85;
+    margin-bottom:40px;
+}
+
+.menu{
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+    padding:0 40px;
+}
+
+.button{
+    height:56px;
+    border:none;
+    outline:none;
+    cursor:pointer;
+    font-weight:700;
+    letter-spacing:1px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 20px;
+    color:#fff;
+}
+
+.button span{
+    font-size:11px;
+    opacity:0.85;
+}
+
+.button strong{
+    font-size:13px;
+}
+
+.single{
+    background:#b1121b; width: 100%;
+}
+
+.single:hover{
+    background:#d01620;
+}
+
+.multi{
+    background:#2b2b2b; width: 100%;
+}
+
+.multi:hover{
+    background:#3a3a3a;
+}
+
+.arrow, .square{
+    width:14px;
+    height:14px;
+    background:#fff;
+}
+
+.arrow{
+    clip-path:polygon(0 0, 100% 50%, 0 100%);
+}
+
+.square{
+    opacity:0.9;
+}
+
+@media(max-width:480px){
+    .logo{
+        font-size:54px;
+        letter-spacing:10px;
+    }
+    .menu{
+        padding:0 25px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="logo">
+        <span class="x">X</span>
+        <span class="o">O</span>
+    </div>
+
+    <div class="subtitle">ELIMINATION ARENA</div>
+
+    <div class="menu">
+
+        <a href="ai.html" style="text-decoration:none;">
+          <button class="button single">
+            <div>
+            <span>SINGLE PLAYER</span><br>
+            <strong>PLAY WITH AI</strong>
+            </div>
+        <div class="arrow"></div>
+    </button>
+</a>
+
+<a href="frind.html" style="text-decoration:none;">
+        <button class="button multi">
+            <div>
+                
+                <strong>PLAY WITH FRIENDS</strong>
+            </div>
+            <div class="square"></div>
+        </button>
+      </a>
+    </div>
+
+</div>
+
+</body>
+</html>

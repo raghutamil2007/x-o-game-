@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Squid Game X/O</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@600;800&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Roboto Mono', monospace;}
+
+body{
+  background:radial-gradient(circle at top,#1c0505,#020202);
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  color:#fff;
+}
+
+/* BACK */
+/* BACK BUTTON */
+.back-btn{
+  position:fixed;
+  top:20px;
+  left:20px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:12px 22px;
+  border:1.5px solid rgba(255,255,255,0.15);
+  color:#e5e7eb;
+  text-decoration:none;
+  font-family:Arial, Helvetica, sans-serif;
+  letter-spacing:4px;
+  font-size:14px;
+  background:rgba(0,0,0,0.6);
+  backdrop-filter: blur(6px);
+  transition:0.3s;
+}
+
+/* Arrow */
+.back-btn span{
+  font-size:18px;
+}
+
+/* Hover effect */
+.back-btn:hover{
+  border-color:#2225c5;
+  color:#5022c5;
+  box-shadow:0 0 20px rgba(34,197,94,0.4);
+}
+
+/* GAME CONTAINER */
+.game{
+  background:linear-gradient(180deg,#0a0a0a,#050505);
+  border-radius:16px;
+  padding:18px;
+  width:340px;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.04),
+    0 20px 60px rgba(0,0,0,.9);
+  text-align:center;
+}
+
+/* TITLE */
+h1{
+  color:#ff0055;
+  letter-spacing:3px;
+  margin-bottom:4px;
+}
+.subtitle{
+  font-size:12px;
+  color:#22c55e;
+  margin-bottom:10px;
+}
+
+/* MODES */
+.modes{
+  display:flex;
+  gap:6px;
+  margin-bottom:12px;
+}
+.modes button{
+  flex:1;
+  background:#0b0b0b;
+  border:1px solid #22c55e;
+  color:#22c55e;
+  padding:6px;
+  border-radius:6px;
+  font-size:12px;
+}
+.modes button.active{
+  background:#22c55e;
+  color:#000;
+}
+
+/* BOARD FRAME (IMAGE STYLE) */
+.board{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:6px;
+  padding:10px;
+  background:rgba(175, 12, 12, 0.02);
+  border-radius:12px;
+  box-shadow:
+    inset 0 0 30px rgba(236, 66, 66, 0.9),
+    0 0 0 1px rgba(202, 45, 45, 0.04);
+}
+
+/* CELLS */
+.cell{
+  height:86px;
+  background:linear-gradient(145deg,#0d0d0d,#fa7b7b);
+  border-radius:6px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:44px;
+  cursor:pointer;
+  box-shadow:
+    inset 0 0 10px     rgba(187, 51, 51, 0.9),
+    0 0 0 1px rgba(178, 48, 48, 0.04);
+}
+
+.cell.X{
+  color:#ff003c;
+  text-shadow:0 0 18px #f3073e;
+}
+.cell.O{
+  color:#22ff88;
+  text-shadow:0 0 18px #22ff88;
+}
+
+/* STATUS */
+.status{
+  margin-top:12px;
+  min-height:20px;
+  font-size:13px;
+}
+
+/* BUTTON */
+button.restart{
+  margin-top:12px;
+  padding:9px 20px;
+  background:#ff0055;
+  border:none;
+  border-radius:6px;
+  color:#fff;
+  font-weight:700;
+}
+
+/* ELIMINATION */
+.eliminated{
+  animation:shake .4s, blood 1s forwards;
+}
+@keyframes shake{
+  25%{transform:translateX(-8px)}
+  50%{transform:translateX(8px)}
+  75%{transform:translateX(-8px)}
+}
+@keyframes blood{
+  to{box-shadow:0 0 80px rgb(27, 40, 184)}
+}
+
+/* MOBILE */
+@media(max-width:420px){
+  .game{width:92%}
+  .cell{height:70px;font-size:34px}
+}
+</style>
+</head>
+
+<body>
+
+<a href="home.html" class="back-btn">⬅ BACK</a>
+
+<div class="game" id="gameBox">
+  <h1>◯ △ ⬜</h1>
+  <div class="subtitle">Squid Game X / O</div>
+
+  <div class="modes">
+    <button class="active" onclick="setMode('easy',this)">EASY</button>
+    <button onclick="setMode('medium',this)">MEDIUM</button>
+    <button onclick="setMode('hard',this)">HARD</button>
+  </div>
+
+  <div class="board" id="board"></div>
+
+  <div class="status" id="status">Your Turn (X)</div>
+
+  <button class="restart" onclick="resetGame()">Restart</button>
+</div>
+
+<script>
+const boardEl = document.getElementById("board");
+const statusText = document.getElementById("status");
+const gameBox = document.getElementById("gameBox");
+
+let gameState=["","","","","","","","",""];
+let gameActive=true;
+let mode="easy";
+
+const PLAYER="X";
+const AI="O";
+
+const wins=[
+ [0,1,2],[3,4,5],[6,7,8],
+ [0,3,6],[1,4,7],[2,5,8],
+ [0,4,8],[2,4,6]
+];
+
+/* 🔊 SOUND SYSTEM */
+const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+
+function tone(freq,d=0.3){
+  const o=audioCtx.createOscillator();
+  const g=audioCtx.createGain();
+  o.frequency.value=freq;
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start();
+  g.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+d);
+  o.stop(audioCtx.currentTime+d);
+}
+
+const clickSound=p=>tone(p==="X"?520:300,0.12);
+const winSound=()=>{tone(420,.2);setTimeout(()=>tone(620,.2),200);setTimeout(()=>tone(820,.3),400);}
+const outSound=()=>{tone(220,.3);setTimeout(()=>tone(140,.4),300);setTimeout(()=>tone(90,.6),600);}
+
+/* Create board */
+for(let i=0;i<9;i++){
+  const c=document.createElement("div");
+  c.className="cell";
+  c.dataset.i=i;
+  c.onclick=()=>playerMove(i,c);
+  boardEl.appendChild(c);
+}
+
+function setMode(m,btn){
+  mode=m;
+  document.querySelectorAll(".modes button").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  resetGame();
+}
+
+function playerMove(i,cell){
+  if(gameState[i]||!gameActive) return;
+  move(i,PLAYER,cell);
+  clickSound(PLAYER);
+  if(gameActive) setTimeout(aiMove,350);
+}
+
+function aiMove(){
+  let index;
+  if(mode==="easy") index=randomMove();
+  else if(mode==="medium") index=mediumMove();
+  else index=minimax(gameState,AI).index;
+
+  if(index===undefined) return;
+  const cell=document.querySelectorAll(".cell")[index];
+  move(index,AI,cell);
+  clickSound(AI);
+}
+
+/* FIXED EASY MODE */
+function randomMove(){
+  const empty=gameState.map((v,i)=>v===""?i:null).filter(v=>v!==null);
+  return empty[Math.floor(Math.random()*empty.length)];
+}
+
+function mediumMove(){
+  for(let i=0;i<9;i++){
+    if(gameState[i]===""){
+      gameState[i]=AI;
+      if(checkWin(gameState,AI)){gameState[i]="";return i;}
+      gameState[i]="";
+    }
+  }
+  for(let i=0;i<9;i++){
+    if(gameState[i]===""){
+      gameState[i]=PLAYER;
+      if(checkWin(gameState,PLAYER)){gameState[i]="";return i;}
+      gameState[i]="";
+    }
+  }
+  return randomMove();
+}
+
+function move(i,p,cell){
+  gameState[i]=p;
+  cell.textContent=p;
+  cell.classList.add(p);
+  checkResult(p);
+}
+
+function checkResult(p){
+  if(wins.some(w=>w.every(i=>gameState[i]===p))){
+    gameActive=false;
+    statusText.textContent=p===PLAYER?"YOU SURVIVED 🟢":"ELIMINATED 🔴";
+    statusText.style.color=p===PLAYER?"#22c55e":"#ff0055";
+    winSound();
+    setTimeout(outSound,600);
+    gameBox.classList.add("eliminated");
+    return;
+  }
+  if(!gameState.includes("")){
+    statusText.textContent="DRAW ⚖️";
+    statusText.style.color="#eab308";
+    gameActive=false;
+  }
+}
+
+function minimax(board,p){
+  const empty=board.map((v,i)=>v===""?i:null).filter(v=>v!==null);
+  if(checkWin(board,PLAYER)) return {score:-10};
+  if(checkWin(board,AI)) return {score:10};
+  if(empty.length===0) return {score:0};
+
+  let moves=[];
+  for(let i of empty){
+    let m={index:i};
+    board[i]=p;
+    m.score=minimax(board,p===AI?PLAYER:AI).score;
+    board[i]="";
+    moves.push(m);
+  }
+  return p===AI
+    ? moves.reduce((a,b)=>a.score>b.score?a:b)
+    : moves.reduce((a,b)=>a.score<b.score?a:b);
+}
+
+function checkWin(b,p){
+  return wins.some(w=>w.every(i=>b[i]===p));
+}
+
+function resetGame(){
+  gameState=["","","","","","","","",""];
+  gameActive=true;
+  statusText.textContent="Your Turn (X)";
+  statusText.style.color="#fff";
+  gameBox.classList.remove("eliminated");
+  document.querySelectorAll(".cell").forEach(c=>{
+    c.textContent="";
+    c.className="cell";
+  });
+}
+</script>
+
+
+
+</body>
+</html>

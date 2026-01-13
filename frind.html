@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Squid Game X/O</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@500;700;900&display=swap');
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:'Roboto Mono', monospace;
+}
+
+body{
+  background:#070707;
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  color:#fff;
+}
+
+/* BACK BUTTON */
+.back-btn{
+  position:fixed;
+  top:20px;
+  left:20px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:12px 22px;
+  border:1.5px solid rgba(173, 36, 36, 0.15);
+  color:#e5e7eb;
+  text-decoration:none;
+  font-family:Arial, Helvetica, sans-serif;
+  letter-spacing:4px;
+  font-size:14px;
+  background:rgba(0,0,0,0.6);
+  backdrop-filter: blur(6px);
+  transition:0.3s;
+}
+
+/* Arrow */
+.back-btn span{
+  font-size:18px;
+}
+
+/* Hover effect */
+.back-btn:hover{
+  border-color:#2b13c5;
+  color:#2225aa;
+  box-shadow:0 0 20px rgba(34,197,94,0.4);
+}
+/* Game Box */
+.game-box{
+  background:#0b0b0b;
+  border:2px solid rgba(255,255,255,0.08);
+  padding:20px;
+  border-radius:14px;
+  text-align:center;
+  width:420px;
+  box-shadow:0 0 40px rgba(0,0,0,0.8);
+}
+
+/* Elimination */
+.game-box.eliminated{
+  animation:shake .4s ease, blood 1s forwards;
+}
+
+@keyframes shake{
+  0%{transform:translateX(0)}
+  25%{transform:translateX(-10px)}
+  50%{transform:translateX(10px)}
+  75%{transform:translateX(-10px)}
+  100%{transform:translateX(0)}
+}
+@keyframes blood{
+  to{box-shadow:0 0 90px rgb(32, 29, 207)}
+}
+
+/* Title */
+h1{
+  color:#ff0055;
+  letter-spacing:3px;
+  margin-bottom:6px;
+}
+.subtitle{
+  font-size:12px;
+  color:#6ee7b7;
+  margin-bottom:16px;
+}
+
+/* Board */
+.board{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+  padding:8px;
+  background:rgba(210, 29, 29, 0.03);
+  border-radius:12px;
+  box-shadow:inset 0 0 20px rgba(140, 23, 23, 0.9);
+}
+
+/* Cells */
+.cell{
+  width:92px;
+  height:92px;
+  background:linear-gradient(145deg,#df3838,#824343);
+  border-radius:6px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:44px;
+  cursor:pointer;
+  transition:.2s;
+  border:1px solid rgba(234, 107, 107, 0.05);
+}
+
+.cell:hover{
+  background:#020617;
+}
+
+.cell.X{
+  color:#ff003c;
+  text-shadow:0 0 14px #ff003c;
+}
+.cell.O{
+  color:#22c55e;
+  text-shadow:0 0 14px #22c55e;
+}
+
+/* Status */
+.status{
+  margin-top:14px;
+  font-size:14px;
+  min-height:20px;
+}
+
+/* Button */
+button{
+  margin-top:14px;
+  padding:10px 24px;
+  background:#ff0055;
+  border:none;
+  border-radius:6px;
+  color:#fff;
+  font-weight:700;
+  cursor:pointer;
+}
+button:hover{background:#e6004c}
+
+/* Mobile */
+@media(max-width:420px){
+  .game-box{width:92%}
+  .cell{
+    width:74px;
+    height:74px;
+    font-size:34px;
+  }
+  .board{
+    gap:6px;
+    padding:6px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<a class="back-btn" href="home.html">⬅ GO BACK</a>
+
+<div class="game-box" id="gameBox">
+  <h1>◯ △ ⬜</h1>
+  <div class="subtitle">Squid Game X / O</div>
+
+  <div class="board" id="board"></div>
+
+  <div class="status" id="status">Player X Turn</div>
+  <button onclick="resetGame()">Restart</button>
+</div>
+
+<script>
+const board = document.getElementById("board");
+const statusText = document.getElementById("status");
+const gameBox = document.getElementById("gameBox");
+
+let currentPlayer="X";
+let gameActive=true;
+let state=["","","","","","","","",""];
+
+const wins=[
+[0,1,2],[3,4,5],[6,7,8],
+[0,3,6],[1,4,7],[2,5,8],
+[0,4,8],[2,4,6]
+];
+
+/* Audio */
+const ctx=new (window.AudioContext||window.webkitAudioContext)();
+
+function tone(f,d=.25){
+  const o=ctx.createOscillator(),g=ctx.createGain();
+  o.frequency.value=f;
+  o.connect(g); g.connect(ctx.destination);
+  o.start();
+  g.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+d);
+  o.stop(ctx.currentTime+d);
+}
+
+function clickSound(p){tone(p==="X"?520:320,.12)}
+function winSound(){
+  tone(440,.2); setTimeout(()=>tone(660,.2),200); setTimeout(()=>tone(880,.35),400);
+}
+function outSound(){
+  tone(220,.3); setTimeout(()=>tone(120,.45),300); setTimeout(()=>tone(80,.6),600);
+}
+
+/* Create cells */
+for(let i=0;i<9;i++){
+  const c=document.createElement("div");
+  c.className="cell";
+  c.onclick=()=>play(c,i);
+  board.appendChild(c);
+}
+
+function play(cell,i){
+  if(state[i]||!gameActive)return;
+  state[i]=currentPlayer;
+  cell.textContent=currentPlayer;
+  cell.classList.add(currentPlayer);
+  clickSound(currentPlayer);
+  check();
+}
+
+function check(){
+  if(wins.some(w=>w.every(i=>state[i]===currentPlayer))){
+    gameActive=false;
+    statusText.textContent=`Player ${currentPlayer} Wins`;
+    statusText.style.color=currentPlayer==="X"?"#ff003c":"#22c55e";
+    winSound();
+    setTimeout(outSound,600);
+    gameBox.classList.add("eliminated");
+    return;
+  }
+  if(!state.includes("")){
+    statusText.textContent="Draw";
+    tone(260,.4);
+    gameActive=false;
+    return;
+  }
+  currentPlayer=currentPlayer==="X"?"O":"X";
+  statusText.textContent=`Player ${currentPlayer} Turn`;
+}
+
+function resetGame(){
+  state=["","","","","","","","",""];
+  currentPlayer="X";
+  gameActive=true;
+  statusText.textContent="Player X Turn";
+  statusText.style.color="#fff";
+  gameBox.classList.remove("eliminated");
+  document.querySelectorAll(".cell").forEach(c=>{
+    c.textContent="";
+    c.className="cell";
+  });
+}
+</script>
+
+</body>
+</html>
